@@ -1,0 +1,21 @@
+# Custom Caddy edge build = Caddy v2.11.4 + mholt/caddy-l4 + sablierapp sablier plugin.
+# Combines what used to be two separate images (caddy-l4, caddy-sablier) into the single
+# binary the HK edge needs (it uses layer4 routes AND Sablier scale-to-zero). See README.
+#
+# Everything is pinned so a rebuild — including the weekly cron in publish.yml — is
+# reproducible: builder base, Caddy core (the `v2.11.4` arg to xcaddy), both plugin
+# versions, and the runtime base. Bump deliberately; never widen a pin to a floating tag.
+# Versions were read from `caddy build-info` on the proven HK/UbuntuVM binaries.
+FROM caddy:2.11.4-builder AS builder
+RUN xcaddy build v2.11.4 \
+    --with github.com/mholt/caddy-l4@v0.1.2 \
+    --with github.com/sablierapp/sablier/plugins/caddy@v0.0.0-20251109203149-96750a50da79
+
+FROM caddy:2.11.4-alpine
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+# Build-time gate: fail the build (before it is ever pushed) if either plugin did not
+# compile in or the core version drifted. This is the whole point of the repo — no silent
+# drift onto the box that terminates every public HK route.
+RUN caddy version | grep -q 'v2.11.4' \
+    && caddy list-modules | grep -q '^layer4$' \
+    && caddy list-modules | grep -q '^http.handlers.sablier$'
