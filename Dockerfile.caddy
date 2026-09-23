@@ -2,6 +2,16 @@
 # Combines what used to be two separate images (caddy-l4, caddy-sablier) into the single
 # binary the HK edge needs (it uses layer4 routes AND Sablier scale-to-zero). See README.
 #
+# sablier moved to github.com/sablierapp/sablier-caddy-plugin: the monorepo path this was
+# previously pinned to (github.com/sablierapp/sablier/plugins/caddy) was deleted from
+# upstream in commit 6d880928c7ec, 2h after the commit this used to pin ("fix!: remove
+# plugins from the repository", 2025-11-09) — that path has no newer commit to bump to and
+# never will. The plugin now lives in its own actively maintained repo with real semver
+# tags. Verified compatible before bumping: module ID unchanged (http.handlers.sablier),
+# config.go (the Caddyfile/JSON directive schema) is byte-identical to the frozen commit,
+# so caddy.json needs no changes. main.go only adds Caddy placeholder expansion in
+# names/group and propagates errors it used to swallow — additive, not breaking.
+#
 # Everything is pinned so a rebuild — including the weekly cron in publish.yml — is
 # reproducible: builder base, Caddy core (the `v2.11.4` arg to xcaddy), both plugin
 # versions, and the runtime base. Bump deliberately; never widen a pin to a floating tag.
@@ -9,7 +19,7 @@
 FROM caddy:2.11.4-builder AS builder
 RUN xcaddy build v2.11.4 \
     --with github.com/mholt/caddy-l4@v0.1.2 \
-    --with github.com/sablierapp/sablier/plugins/caddy@v0.0.0-20251109203149-96750a50da79
+    --with github.com/sablierapp/sablier-caddy-plugin@v1.0.2
 
 FROM caddy:2.11.4-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
