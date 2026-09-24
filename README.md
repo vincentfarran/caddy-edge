@@ -44,8 +44,8 @@ module's latest, which on an edge image is silent drift. Values were read from
 > instead of the separate `sablierapp/sablier-caddy-plugin` repo. That guidance is now
 > **backwards**: the monorepo path was deleted from upstream in commit `6d880928c7ec`
 > ("fix!: remove plugins from the repository", 2025-11-09), 2 hours after the commit this
-> was previously pinned to (`96750a50da79`) — there is no newer commit at that path and
-> never will be. `sablierapp/sablier-caddy-plugin` is now the actively maintained upstream
+> was previously pinned to (`96750a50da79`) — the old path has no newer revision (checked
+> 2026-09-24). `sablierapp/sablier-caddy-plugin` is now the actively maintained upstream
 > (real semver tags, pushed as recently as 2026-08-18 as of this check).
 >
 > Verified compatible before bumping: module ID unchanged (`http.handlers.sablier`),

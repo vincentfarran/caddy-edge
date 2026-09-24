@@ -5,8 +5,8 @@
 # sablier moved to github.com/sablierapp/sablier-caddy-plugin: the monorepo path this was
 # previously pinned to (github.com/sablierapp/sablier/plugins/caddy) was deleted from
 # upstream in commit 6d880928c7ec, 2h after the commit this used to pin ("fix!: remove
-# plugins from the repository", 2025-11-09) — that path has no newer commit to bump to and
-# never will. The plugin now lives in its own actively maintained repo with real semver
+# plugins from the repository", 2025-11-09) — the old path has no newer revision as of
+# 2025-11-09's removal (checked 2026-09-24). The plugin now lives in its own actively maintained repo with real semver
 # tags. Verified compatible before bumping: module ID unchanged (http.handlers.sablier),
 # config.go (the Caddyfile/JSON directive schema) is byte-identical to the frozen commit,
 # so caddy.json needs no changes. main.go only adds Caddy placeholder expansion in
