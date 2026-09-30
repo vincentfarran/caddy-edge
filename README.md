@@ -1,13 +1,20 @@
 # caddy-edge
 
 Custom [Caddy](https://caddyserver.com/) build for the fleet's public edge — a single
-binary carrying **both** plugins the HK edge needs:
+binary carrying the **three** plugins the HK edge needs:
 
 - [`github.com/mholt/caddy-l4`](https://github.com/mholt/caddy-l4) — Layer-4 (TCP/UDP)
   routing (the existing HK edge routes depend on it).
 - [`github.com/sablierapp/sablier-caddy-plugin`](https://github.com/sablierapp/sablier-caddy-plugin) —
   the [Sablier](https://sablierapp.dev/) scale-to-zero handler (`http.handlers.sablier`),
   which warms the on-demand `authentik@hk` group on first request.
+- [`github.com/caddy-dns/cloudflare`](https://github.com/caddy-dns/cloudflare) —
+  `dns.providers.cloudflare`, for `*.hk.mesh.snowboy.org` DNS-01 (infra-ops
+  `CHG-20260923-mesh-tls-wildcard`). The challenge is delegated by an `_acme-challenge`
+  CNAME into the dedicated `0nlyfan.org` zone, so the token is scoped there and cannot touch
+  `snowboy.org`'s records. ⚠️ The consuming `caddy.json` must set `override_domain`
+  (`dns_challenge_override_domain`) to the full CNAME target, or Caddy writes the TXT record
+  in the original zone and issuance fails; this image only supplies the provider.
 
 It supersedes the two half-images this replaced: `caddy-l4` (layer4 only) and
 `caddy-sablier` (sablier only). A Sablier Caddy plugin is compiled in, not loaded at
@@ -38,6 +45,7 @@ module's latest, which on an edge image is silent drift. Values were read from
 | Caddy core | `v2.11.4` (builder base `caddy:2.11.4-builder`, `xcaddy build v2.11.4`, runtime `caddy:2.11.4-alpine`) |
 | layer4 | `github.com/mholt/caddy-l4@v0.1.2` |
 | sablier | `github.com/sablierapp/sablier-caddy-plugin@v1.0.2` |
+| cloudflare | `github.com/caddy-dns/cloudflare@v0.2.4` |
 
 > ⚠️ **Repo moved, 2026-09-24.** The Sablier Caddy plugin used to live in the Sablier
 > monorepo at `.../sablier/plugins/caddy`, and this README used to warn to use that path
@@ -56,7 +64,7 @@ module's latest, which on an edge image is silent drift. Values were read from
 > frozen commit and got the same move in its own PR.
 
 The build **self-verifies**: `Dockerfile.caddy` fails the build if the core version drifts
-or either plugin is missing, so a broken image is never pushed.
+or any plugin is missing, so a broken image is never pushed.
 
 ## Build & publish
 

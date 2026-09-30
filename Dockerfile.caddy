@@ -1,4 +1,5 @@
-# Custom Caddy edge build = Caddy v2.11.4 + mholt/caddy-l4 + sablierapp sablier plugin.
+# Custom Caddy edge build = Caddy v2.11.4 + mholt/caddy-l4 + sablierapp sablier plugin +
+# caddy-dns/cloudflare.
 # Combines what used to be two separate images (caddy-l4, caddy-sablier) into the single
 # binary the HK edge needs (it uses layer4 routes AND Sablier scale-to-zero). See README.
 #
@@ -12,6 +13,13 @@
 # so caddy.json needs no changes. main.go only adds Caddy placeholder expansion in
 # names/group and propagates errors it used to swallow — additive, not breaking.
 #
+# caddy-dns/cloudflare added for CHG-20260923-mesh-tls-wildcard (infra-ops): DNS-01 for
+# hk.mesh.snowboy.org / *.hk.mesh.snowboy.org, delegated by an _acme-challenge CNAME to the
+# dedicated 0nlyfan.org zone so the token never touches snowboy.org's own records. Same module
+# and pin as ghcr.io/vincentfarran/caddy-sab-duck (NasSTY), proven there by a real issuance.
+# The consuming caddy.json must set `override_domain` (dns_challenge_override_domain) to the
+# CNAME target; this image only supplies the provider. The HK edge keeps no other DNS provider.
+#
 # Everything is pinned so a rebuild — including the weekly cron in publish.yml — is
 # reproducible: builder base, Caddy core (the `v2.11.4` arg to xcaddy), both plugin
 # versions, and the runtime base. Bump deliberately; never widen a pin to a floating tag.
@@ -19,13 +27,15 @@
 FROM caddy:2.11.4-builder AS builder
 RUN xcaddy build v2.11.4 \
     --with github.com/mholt/caddy-l4@v0.1.2 \
+    --with github.com/caddy-dns/cloudflare@v0.2.4 \
     --with github.com/sablierapp/sablier-caddy-plugin@v1.0.2
 
 FROM caddy:2.11.4-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
-# Build-time gate: fail the build (before it is ever pushed) if either plugin did not
+# Build-time gate: fail the build (before it is ever pushed) if a plugin did not
 # compile in or the core version drifted. This is the whole point of the repo — no silent
 # drift onto the box that terminates every public HK route.
 RUN caddy version | grep -q 'v2.11.4' \
     && caddy list-modules | grep -q '^layer4$' \
+    && caddy list-modules | grep -q '^dns.providers.cloudflare$' \
     && caddy list-modules | grep -q '^http.handlers.sablier$'
